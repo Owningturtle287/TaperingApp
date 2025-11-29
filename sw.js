@@ -1,6 +1,6 @@
 // sw.js
 
-const CACHE_NAME = 'tapering-app-v1';
+const CACHE_NAME = 'tapering-app-v2';
 
 const ASSETS = [
   './',
@@ -75,3 +75,4 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
