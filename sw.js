@@ -1,7 +1,7 @@
-const CACHE_NAME = 'taper-tracker-v1';
+// sw.js
 
-// If you host in a GitHub Pages subfolder, this will still work as long as
-// sw.js, index.html, manifest.webmanifest, and icons are in the same repo root.
+const CACHE_NAME = 'tapering-app-v1';
+
 const ASSETS = [
   './',
   './index.html',
@@ -13,13 +13,17 @@ const ASSETS = [
   './icons/maskable-icon-512.png'
 ];
 
+// Install: cache the app shell
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS);
+    })
   );
   self.skipWaiting();
 });
 
+// Activate: clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -33,9 +37,11 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Simple "cache first, then network" strategy for GET requests
+// Fetch: cache-first strategy
 self.addEventListener('fetch', (event) => {
   const request = event.request;
+
+  // Only handle GET requests
   if (request.method !== 'GET') return;
 
   event.respondWith(
@@ -63,8 +69,7 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         })
         .catch(() => {
-          // Fallback: if offline and not in cache, you could return a custom
-          // offline page here instead of nothing.
+          // If offline and not in cache, fall back to the main page
           return caches.match('./');
         });
     })
