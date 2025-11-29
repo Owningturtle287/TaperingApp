@@ -1,13 +1,14 @@
 {
   "name": "Taper Tracker",
   "short_name": "Taper",
-  "description": "Track your medication taper progress visually and safely.",
+  "id": ".",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#020617",
   "theme_color": "#0f766e",
+  "description": "Track your medication taper progress visually and safely.",
   "icons": [
     {
       "src": "icons/icon-192.png",
