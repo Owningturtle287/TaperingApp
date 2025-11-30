@@ -204,18 +204,21 @@
             <!-- Profiles & Action Buttons -->
             <div class="bg-white dark:bg-dark-card p-4 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-soft space-y-4">
                 
-                <!-- Custom Profile Selector -->
-                <div class="relative w-full">
-                    <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
-                        <i class="ph-bold ph-caret-down"></i>
-                    </div>
+                <!-- Custom Profile Dropdown -->
+                <div class="relative w-full" id="profileDropdownContainer">
+                    <button onclick="toggleProfileDropdown(event)" class="relative w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white font-semibold py-3 pl-11 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all text-left text-sm flex items-center justify-between">
+                        <span id="selectedProfileText" class="truncate">Select Saved Profile...</span>
+                        <i class="ph-bold ph-caret-down text-slate-400"></i>
+                    </button>
+                    
                     <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-brand-500">
                         <i class="ph-duotone ph-user-list text-lg"></i>
                     </div>
-                    <!-- The actual select, invisible but clickable on top -->
-                    <select id="profileSelect" onchange="loadProfile(this.value)" class="appearance-none w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white font-semibold py-3 pl-11 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-shadow cursor-pointer text-sm">
-                        <option value="" disabled selected>Select Saved Profile...</option>
-                    </select>
+
+                    <!-- Dropdown Menu -->
+                    <div id="profileMenu" class="hidden absolute top-full left-0 right-0 mt-2 bg-white dark:bg-dark-card border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl z-30 max-h-60 overflow-y-auto overflow-x-hidden transform origin-top transition-all">
+                        <!-- Items injected here -->
+                    </div>
                 </div>
                 
                 <div class="flex gap-3">
@@ -698,14 +701,22 @@
                     <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                         <div class="relative pl-4 border-l-2 border-brand-500">
                             <div class="flex justify-between items-baseline mb-1">
-                                <span class="text-sm font-bold text-slate-900 dark:text-white">v1.5.0</span>
+                                <span class="text-sm font-bold text-slate-900 dark:text-white">v1.7.0</span>
                                 <span class="text-[10px] font-medium text-slate-500 uppercase tracking-wide">Latest</span>
                             </div>
                             <ul class="text-xs text-slate-500 dark:text-slate-400 space-y-1 list-disc pl-3">
-                                <li><strong>New:</strong> In-App Modals (Replaced Browser Popups).</li>
-                                <li><strong>UI:</strong> Enhanced Confirm/Prompt Dialogs.</li>
-                                <li><strong>Fix:</strong> Cancel loading resets dropdown.</li>
-                                <li><strong>Fix:</strong> Enter key works in input prompts.</li>
+                                <li><strong>Fix:</strong> Android notification support via Service Worker.</li>
+                                <li><strong>Improvement:</strong> Added vibration to notifications.</li>
+                                <li><strong>Refine:</strong> Prioritized robust notification API.</li>
+                            </ul>
+                        </div>
+                        <div class="relative pl-4 border-l-2 border-slate-200 dark:border-slate-700">
+                            <div class="flex justify-between items-baseline mb-1">
+                                <span class="text-sm font-bold text-slate-500 dark:text-slate-400">v1.6.0</span>
+                            </div>
+                            <ul class="text-xs text-slate-400 dark:text-slate-500 space-y-1 list-disc pl-3">
+                                <li>Custom Profile Dropdown & Deletion.</li>
+                                <li>In-App Modals.</li>
                             </ul>
                         </div>
                     </div>
@@ -734,7 +745,7 @@
         // --- GLOBAL STATE ---
         let currentTab = 'reminders';
         let medications = JSON.parse(localStorage.getItem('medications')) || [];
-        let dailyLogs = JSON.parse(localStorage.getItem('dailyLogs')) || {}; // Format: "YYYY-MM-DD": { medId: timestamp }
+        let dailyLogs = JSON.parse(localStorage.getItem('dailyLogs')) || {}; 
         let savedProfiles = JSON.parse(localStorage.getItem('profiles')) || {}; 
         let selectedNotifyOffset = 0;
         let lastDateKey = '';
@@ -762,7 +773,6 @@
 
         document.getElementById('confirmBtn').addEventListener('click', () => {
             if (confirmCallback) confirmCallback();
-            // Clear cancel callback so it doesn't fire on close
             cancelConfirmCallback = null;
             closeConfirmModal();
         });
@@ -788,7 +798,6 @@
             closePromptModal();
         });
         
-        // Handle Enter key in prompt
         document.getElementById('promptInput').addEventListener('keyup', (e) => {
             if (e.key === 'Enter') {
                 const val = document.getElementById('promptInput').value;
@@ -837,16 +846,46 @@
             }
         }
 
-        // --- 3. PROFILE LOGIC ---
+        // --- 3. CUSTOM PROFILE DROPDOWN LOGIC ---
+        
+        function toggleProfileDropdown(e) {
+            if(e) e.stopPropagation();
+            const menu = document.getElementById('profileMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Close dropdown when clicking outside
+        window.addEventListener('click', (e) => {
+            const container = document.getElementById('profileDropdownContainer');
+            const menu = document.getElementById('profileMenu');
+            if (container && menu && !container.contains(e.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
         function renderProfileOptions() {
-            const select = document.getElementById('profileSelect');
-            select.innerHTML = '<option value="" disabled selected>Select Saved Profile...</option>';
+            const menu = document.getElementById('profileMenu');
+            menu.innerHTML = '';
             
-            Object.keys(savedProfiles).forEach(name => {
-                const opt = document.createElement('option');
-                opt.value = name;
-                opt.innerText = name;
-                select.appendChild(opt);
+            const keys = Object.keys(savedProfiles);
+            
+            if (keys.length === 0) {
+                menu.innerHTML = '<div class="p-4 text-xs text-slate-400 text-center font-medium italic">No saved profiles yet</div>';
+                return;
+            }
+
+            keys.forEach(name => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors border-b border-slate-50 dark:border-slate-700/50 last:border-0 group';
+                item.innerHTML = `
+                    <button onclick="loadProfile('${name}')" class="flex-1 text-left text-sm font-semibold text-slate-700 dark:text-slate-200 px-2 py-1.5 truncate">
+                        ${name}
+                    </button>
+                    <button onclick="deleteProfile(event, '${name}')" class="p-2 text-slate-300 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
+                        <i class="ph-bold ph-trash"></i>
+                    </button>
+                `;
+                menu.appendChild(item);
             });
         }
 
@@ -858,11 +897,16 @@
             
             openPromptModal("Save Profile", "Enter profile name...", (name) => {
                 if(name && name.trim() !== "") {
-                    savedProfiles[name.trim()] = JSON.parse(JSON.stringify(medications));
+                    const cleanName = name.trim();
+                    savedProfiles[cleanName] = JSON.parse(JSON.stringify(medications));
                     localStorage.setItem('profiles', JSON.stringify(savedProfiles));
+                    
                     renderProfileOptions();
-                    document.getElementById('profileSelect').value = name.trim();
-                    showToast(`Profile "${name}" saved`);
+                    
+                    // Update header text to show current profile
+                    document.getElementById('selectedProfileText').innerText = cleanName;
+                    
+                    showToast(`Profile "${cleanName}" saved`);
                 }
             });
         }
@@ -873,18 +917,43 @@
                     "Load Profile?", 
                     `Load "${name}"? This will replace your current schedule.`, 
                     () => {
-                        // Confirm Action
                         medications = JSON.parse(JSON.stringify(savedProfiles[name]));
                         localStorage.setItem('medications', JSON.stringify(medications));
                         renderMedList();
+                        
+                        document.getElementById('selectedProfileText').innerText = name;
+                        document.getElementById('profileMenu').classList.add('hidden');
+                        
                         showToast(`Loaded "${name}"`);
                     },
                     () => {
-                        // Cancel Action - Reset dropdown
-                        document.getElementById('profileSelect').value = "";
+                        // Cancel action
+                        document.getElementById('profileMenu').classList.add('hidden');
                     }
                 );
             }
+        }
+
+        function deleteProfile(e, name) {
+            if(e) e.stopPropagation(); // Prevent loading the profile when clicking delete
+            
+            openConfirmModal(
+                "Delete Profile?", 
+                `Permanently delete "${name}"?`,
+                () => {
+                    delete savedProfiles[name];
+                    localStorage.setItem('profiles', JSON.stringify(savedProfiles));
+                    renderProfileOptions();
+                    
+                    // Reset text if we deleted the currently selected one
+                    const currentText = document.getElementById('selectedProfileText').innerText;
+                    if(currentText === name) {
+                        document.getElementById('selectedProfileText').innerText = "Select Saved Profile...";
+                    }
+                    
+                    showToast(`Profile deleted`);
+                }
+            );
         }
 
         // --- 4. MEDICATION LOGIC ---
@@ -1166,7 +1235,23 @@
                 const body = med.notifyOffset > 0 
                     ? `Upcoming dose (${med.dose}mg) in ${med.notifyOffset} mins.` 
                     : `Take your ${med.dose}mg dose now.`;
-                new Notification(title, { body, icon: 'icons/icon-192.png' });
+                
+                // Use Service Worker for Android if available
+                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.ready.then(function(registration) {
+                        registration.showNotification(title, {
+                            body: body,
+                            icon: 'icons/icon-192.png',
+                            badge: 'icons/icon-192.png',
+                            vibrate: [200, 100, 200],
+                            tag: minuteKey,
+                            renotify: true
+                        });
+                    });
+                } else {
+                    // Fallback
+                    new Notification(title, { body, icon: 'icons/icon-192.png' });
+                }
             } 
             
             showToast(`Reminder: ${med.name} (${med.dose}mg)`);
