@@ -701,22 +701,21 @@
                     <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                         <div class="relative pl-4 border-l-2 border-brand-500">
                             <div class="flex justify-between items-baseline mb-1">
-                                <span class="text-sm font-bold text-slate-900 dark:text-white">v1.7.0</span>
+                                <span class="text-sm font-bold text-slate-900 dark:text-white">v1.8.0</span>
                                 <span class="text-[10px] font-medium text-slate-500 uppercase tracking-wide">Latest</span>
                             </div>
                             <ul class="text-xs text-slate-500 dark:text-slate-400 space-y-1 list-disc pl-3">
-                                <li><strong>Fix:</strong> Android notification support via Service Worker.</li>
-                                <li><strong>Improvement:</strong> Added vibration to notifications.</li>
-                                <li><strong>Refine:</strong> Prioritized robust notification API.</li>
+                                <li><strong>Fix:</strong> Daily notifications now recur correctly every day (fixed duplication logic).</li>
+                                <li><strong>Core:</strong> Midnight auto-uncheck verification.</li>
                             </ul>
                         </div>
                         <div class="relative pl-4 border-l-2 border-slate-200 dark:border-slate-700">
                             <div class="flex justify-between items-baseline mb-1">
-                                <span class="text-sm font-bold text-slate-500 dark:text-slate-400">v1.6.0</span>
+                                <span class="text-sm font-bold text-slate-500 dark:text-slate-400">v1.7.0</span>
                             </div>
                             <ul class="text-xs text-slate-400 dark:text-slate-500 space-y-1 list-disc pl-3">
-                                <li>Custom Profile Dropdown & Deletion.</li>
-                                <li>In-App Modals.</li>
+                                <li>Android notification support.</li>
+                                <li>Custom Modals.</li>
                             </ul>
                         </div>
                     </div>
@@ -1227,7 +1226,10 @@
         let firedNotifications = new Set();
 
         function sendNotification(med) {
-            const minuteKey = `${med.id}-${new Date().getMinutes()}`;
+            // FIX: Include full date/month/year in key so it cycles correctly every day
+            const now = new Date();
+            const minuteKey = `${med.id}-${now.toDateString()}-${now.getHours()}:${now.getMinutes()}`;
+            
             if (firedNotifications.has(minuteKey)) return;
 
             if ("Notification" in window && Notification.permission === "granted") {
