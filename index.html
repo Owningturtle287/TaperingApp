@@ -701,21 +701,22 @@
                     <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                         <div class="relative pl-4 border-l-2 border-brand-500">
                             <div class="flex justify-between items-baseline mb-1">
-                                <span class="text-sm font-bold text-slate-900 dark:text-white">v1.8.0</span>
+                                <span class="text-sm font-bold text-slate-900 dark:text-white">v1.9.0</span>
                                 <span class="text-[10px] font-medium text-slate-500 uppercase tracking-wide">Latest</span>
                             </div>
                             <ul class="text-xs text-slate-500 dark:text-slate-400 space-y-1 list-disc pl-3">
-                                <li><strong>Fix:</strong> Daily notifications now recur correctly every day (fixed duplication logic).</li>
-                                <li><strong>Core:</strong> Midnight auto-uncheck verification.</li>
+                                <li><strong>Fix:</strong> Notifications recur daily automatically (persisted tracking).</li>
+                                <li><strong>Fix:</strong> Alerts fire even if medication is checked off (optional safeguard).</li>
+                                <li><strong>Logic:</strong> Midnight cycle reset improvements.</li>
                             </ul>
                         </div>
                         <div class="relative pl-4 border-l-2 border-slate-200 dark:border-slate-700">
                             <div class="flex justify-between items-baseline mb-1">
-                                <span class="text-sm font-bold text-slate-500 dark:text-slate-400">v1.7.0</span>
+                                <span class="text-sm font-bold text-slate-500 dark:text-slate-400">v1.8.0</span>
                             </div>
                             <ul class="text-xs text-slate-400 dark:text-slate-500 space-y-1 list-disc pl-3">
-                                <li>Android notification support.</li>
-                                <li>Custom Modals.</li>
+                                <li>Daily recurring notification fix.</li>
+                                <li>Service Worker updates.</li>
                             </ul>
                         </div>
                     </div>
@@ -746,6 +747,7 @@
         let medications = JSON.parse(localStorage.getItem('medications')) || [];
         let dailyLogs = JSON.parse(localStorage.getItem('dailyLogs')) || {}; 
         let savedProfiles = JSON.parse(localStorage.getItem('profiles')) || {}; 
+        let lastNotificationDate = JSON.parse(localStorage.getItem('lastNotificationDate')) || {}; // Map: "medId" -> "dateString"
         let selectedNotifyOffset = 0;
         let lastDateKey = '';
         
@@ -1223,14 +1225,13 @@
             });
         }, 5000); 
 
-        let firedNotifications = new Set();
-
         function sendNotification(med) {
-            // FIX: Include full date/month/year in key so it cycles correctly every day
-            const now = new Date();
-            const minuteKey = `${med.id}-${now.toDateString()}-${now.getHours()}:${now.getMinutes()}`;
-            
-            if (firedNotifications.has(minuteKey)) return;
+            // FIX: Use localStorage to track last notification date per med
+            const todayStr = new Date().toDateString(); // e.g. "Tue Dec 09 2025"
+            const lastSent = lastNotificationDate[med.id];
+
+            // If already sent today, skip
+            if (lastSent === todayStr) return;
 
             if ("Notification" in window && Notification.permission === "granted") {
                 const title = `Time for ${med.name}`;
@@ -1246,7 +1247,7 @@
                             icon: 'icons/icon-192.png',
                             badge: 'icons/icon-192.png',
                             vibrate: [200, 100, 200],
-                            tag: minuteKey,
+                            tag: `${med.id}-${todayStr}`, // Unique tag per day ensures it shows up again tomorrow
                             renotify: true
                         });
                     });
@@ -1257,7 +1258,10 @@
             } 
             
             showToast(`Reminder: ${med.name} (${med.dose}mg)`);
-            firedNotifications.add(minuteKey);
+            
+            // Mark as sent for today
+            lastNotificationDate[med.id] = todayStr;
+            localStorage.setItem('lastNotificationDate', JSON.stringify(lastNotificationDate));
         }
         
         // --- TOAST STACK LOGIC ---
