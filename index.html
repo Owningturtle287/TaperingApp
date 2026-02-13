@@ -80,7 +80,41 @@
             -webkit-tap-highlight-color: transparent;
             font-feature-settings: "cv11", "ss01";
         }
+
+        :root {
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
         
+        .pb-safe {
+            padding-bottom: var(--safe-bottom);
+        }
+
+        .pt-safe {
+            padding-top: var(--safe-top);
+        }
+
+        input,
+        select,
+        textarea {
+            font-size: 16px; /* prevents iOS zoom-on-focus */
+        }
+
+        @media (min-width: 640px) {
+            input,
+            select,
+            textarea {
+                font-size: 0.875rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .desktop-card {
+                box-shadow: 0 20px 40px -24px rgba(15, 23, 42, 0.25);
+            }
+        }
+
         /* Remove Spin Buttons */
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
@@ -160,8 +194,8 @@
 <body class="bg-slate-50 text-slate-600 dark:bg-dark-bg dark:text-slate-400 transition-theme min-h-screen selection:bg-brand-500 selection:text-white relative pb-32">
 
     <!-- Sticky Header -->
-    <header class="fixed top-0 w-full z-40 glass border-b border-slate-200/50 dark:border-slate-800/50 transition-theme shadow-sm">
-        <div class="max-w-md mx-auto px-6 py-4 flex justify-between items-center">
+    <header class="fixed top-0 w-full z-40 glass border-b border-slate-200/50 dark:border-slate-800/50 transition-theme shadow-sm pt-safe">
+        <div class="max-w-md sm:max-w-xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
             <div>
                 <h1 class="text-xl font-display font-bold text-slate-900 dark:text-slate-50 tracking-tight">Taper Tracker</h1>
                 <p id="headerSubtitle" class="text-[11px] font-bold text-brand-600 dark:text-brand-400 uppercase tracking-widest">Daily Reminders</p>
@@ -178,9 +212,9 @@
     </header>
 
     <!-- Spacer for fixed header -->
-    <div class="h-20"></div>
+    <div class="h-20 sm:h-24"></div>
 
-    <main class="max-w-md mx-auto px-6 space-y-6">
+    <main class="max-w-md sm:max-w-xl mx-auto px-4 sm:px-6 space-y-6 desktop-card">
         
         <!-- TAB 1: DAILY REMINDERS (DEFAULT) -->
         <div id="tab-reminders" class="animate-slide-up space-y-6">
@@ -586,8 +620,8 @@
         <!-- Add/Edit Med Modal -->
         <div id="addMedModal" class="fixed inset-0 z-[50] hidden" role="dialog" aria-modal="true">
             <div class="absolute inset-0 bg-slate-900/40 dark:bg-slate-900/70 backdrop-blur-sm transition-opacity" onclick="closeAddMedModal()"></div>
-            <div class="absolute bottom-0 left-0 right-0 p-6 md:top-1/2 md:left-1/2 md:transform md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-sm md:bottom-auto">
-                <div class="bg-white dark:bg-dark-card rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 modal-content-enter">
+            <div class="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:top-1/2 md:left-1/2 md:transform md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-sm md:bottom-auto">
+                <div class="bg-white dark:bg-dark-card rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 modal-content-enter max-h-[85vh] overflow-y-auto">
                     <div class="flex justify-between items-center mb-6">
                         <h3 class="text-xl font-display font-bold text-slate-900 dark:text-white" id="modalTitle">Add Medication</h3>
                         <button onclick="closeAddMedModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
@@ -703,22 +737,23 @@
                     <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                         <div class="relative pl-4 border-l-2 border-brand-500">
                             <div class="flex justify-between items-baseline mb-1">
-                                <span class="text-sm font-bold text-slate-900 dark:text-white">v1.9.0</span>
+                                <span class="text-sm font-bold text-slate-900 dark:text-white">v1.9.5</span>
                                 <span class="text-[10px] font-medium text-slate-500 uppercase tracking-wide">Latest</span>
                             </div>
                             <ul class="text-xs text-slate-500 dark:text-slate-400 space-y-1 list-disc pl-3">
-                                <li><strong>Fix:</strong> Notifications recur daily automatically (persisted tracking).</li>
-                                <li><strong>Fix:</strong> Alerts fire even if medication is checked off (optional safeguard).</li>
-                                <li><strong>Logic:</strong> Midnight cycle reset improvements.</li>
+                                <li><strong>UI:</strong> Improved cross-device spacing and safe-area behavior for iPhone and Android.</li>
+                                <li><strong>UX:</strong> Better modal sizing and scrolling on smaller screens.</li>
+                                <li><strong>Desktop:</strong> Refined responsive layout width for larger screens.</li>
                             </ul>
                         </div>
                         <div class="relative pl-4 border-l-2 border-slate-200 dark:border-slate-700">
                             <div class="flex justify-between items-baseline mb-1">
-                                <span class="text-sm font-bold text-slate-500 dark:text-slate-400">v1.8.0</span>
+                                <span class="text-sm font-bold text-slate-500 dark:text-slate-400">v1.9.0</span>
                             </div>
                             <ul class="text-xs text-slate-400 dark:text-slate-500 space-y-1 list-disc pl-3">
-                                <li>Daily recurring notification fix.</li>
-                                <li>Service Worker updates.</li>
+                                <li>Notifications recur daily automatically (persisted tracking).</li>
+                                <li>Alerts fire even if medication is checked off.</li>
+                                <li>Midnight cycle reset improvements.</li>
                             </ul>
                         </div>
                     </div>
@@ -730,7 +765,7 @@
 
     <!-- Bottom Navigation Bar -->
     <nav class="fixed bottom-0 left-0 w-full z-50 glass border-t border-slate-200/50 dark:border-slate-800/50 pb-safe">
-        <div class="max-w-md mx-auto flex justify-around items-center h-16 px-2">
+        <div class="max-w-md sm:max-w-xl mx-auto flex justify-around items-center h-16 px-2">
             <button onclick="switchTab('reminders')" id="nav-reminders" class="flex flex-col items-center justify-center w-full h-full text-brand-500 dark:text-brand-400 transition-colors">
                 <i class="ph-fill ph-calendar-check text-2xl mb-1"></i>
                 <span class="text-[10px] font-bold uppercase tracking-wide">Daily</span>
